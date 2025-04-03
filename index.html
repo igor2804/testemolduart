@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Orçamentos | Gesso</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #00a86b;
+            --primary-dark: #007a53;
+            --accent: #006400;
+            --light: #f8f9fa;
+            --dark: #212529;
+            --white: #ffffff;
+            --gray: #6c757d;
+            --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --transition: all 0.3s ease;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Montserrat', sans-serif;
+            background-color: var(--light);
+            color: var(--dark);
+            line-height: 1.6;
+        }
+
+        header {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 1rem 0;
+            box-shadow: var(--shadow);
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1000;
+            backdrop-filter: blur(8px);
+        }
+
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+        }
+
+        .main-content {
+            max-width: 1200px;
+            margin: 100px auto 0;
+            padding: 2rem;
+        }
+
+        .page-title {
+            text-align: center;
+            margin-bottom: 2rem;
+            color: var(--primary-dark);
+            font-size: 2rem;
+        }
+
+        .options-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-bottom: 3rem;
+        }
+
+        .option-card {
+            background: var(--white);
+            border-radius: 10px;
+            padding: 2rem;
+            box-shadow: var(--shadow);
+            transition: var(--transition);
+            text-align: center;
+            cursor: pointer;
+        }
+
+        .option-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .option-icon {
+            font-size: 3rem;
+            color: var(--primary);
+            margin-bottom: 1rem;
+        }
+
+        .option-title {
+            font-size: 1.3rem;
+            margin-bottom: 1rem;
+            color: var(--dark);
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 0.8rem 1.5rem;
+            background: var(--primary);
+            color: var(--white);
+            border: none;
+            border-radius: 5px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: var(--transition);
+            text-decoration: none;
+        }
+
+        .btn:hover {
+            background: var(--primary-dark);
+        }
+
+        .btn-voltar {
+            display: inline-block;
+            padding: 0.8rem 1.5rem;
+            background: var(--gray);
+            color: var(--white);
+            border: none;
+            border-radius: 5px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: var(--transition);
+            text-decoration: none;
+            margin-top: 1rem;
+            width: 100%;
+            text-align: center;
+        }
+
+        .btn-voltar:hover {
+            background: #5a6268;
+        }
+
+        .form-container {
+            background: var(--white);
+            border-radius: 10px;
+            padding: 2rem;
+            box-shadow: var(--shadow);
+            max-width: 600px;
+            margin: 0 auto;
+            display: none;
+        }
+
+        .form-title {
+            text-align: center;
+            margin-bottom: 1.5rem;
+            color: var(--primary-dark);
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 0.8rem;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+
+        .btn-submit {
+            width: 100%;
+            padding: 1rem;
+            background: var(--primary);
+            color: var(--white);
+            border: none;
+            border-radius: 5px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 1rem;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 2000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: var(--white);
+            border-radius: 10px;
+            padding: 2rem;
+            max-width: 500px;
+            width: 90%;
+            margin: 0 auto;
+        }
+
+        .result-table {
+            width: 100%;
+            margin: 1rem 0;
+            border-collapse: collapse;
+        }
+
+        .result-table th, .result-table td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid #eee;
+        }
+
+        .result-table th {
+            background-color: var(--primary);
+            color: white;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                padding: 1rem;
+                margin-top: 80px;
+            }
+            
+            .options-container {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="header-content">
+            <div class="logo">
+                <svg class="logo-icon" viewBox="0 0 100 100">
+                    <path d="M20,20 L20,70" stroke="#006400" stroke-width="12"/>
+                    <path d="M80,20 L80,70" stroke="#006400" stroke-width="12"/>
+                    <path d="M20,20 L50,50 L80,20" stroke="#006400" stroke-width="12" fill="none"/>
+                    <path d="M30,40 L70,40" stroke="#006400" stroke-width="12"/>
+                </svg>
+                <span>Gesso</span>
+            </div>
+        </div>
+    </header>
+
+    <div class="main-content">
+        <h1 class="page-title">Solicite Seu Orçamento</h1>
+        
+        <div class="options-container">
+            <div class="option-card" data-opcao="moldura">
+                <div class="option-icon"><i class="fas fa-ruler-combined"></i></div>
+                <h3 class="option-title">Molduras</h3>
+                <button class="btn">Selecionar</button>
+            </div>
+            
+            <div class="option-card" data-opcao="parede">
+                <div class="option-icon"><i class="fas fa-border-style"></i></div>
+                <h3 class="option-title">Paredes Drywall</h3>
+                <button class="btn">Selecionar</button>
+            </div>
+            
+            <div class="option-card" data-opcao="forro">
+                <div class="option-icon"><i class="fas fa-layer-group"></i></div>
+                <h3 class="option-title">Forros</h3>
+                <button class="btn">Selecionar</button>
+            </div>
+        </div>
+        
+        <div id="formulario" class="form-container">
+            <h2 class="form-title" id="form-title"></h2>
+            <form id="budget-form">
+                <div id="inputsDinamicos"></div>
+            </form>
+        </div>
+    </div>
+
+    <div id="resultModal" class="modal">
+        <div class="modal-content">
+            <h3>Orçamento Calculado</h3>
+            <div id="resultText"></div>
+            <button id="voltarModal" class="btn" style="margin-top: 1rem; background: var(--gray);">
+                <i class="fas fa-arrow-left"></i> Voltar
+            </button>
+            <button id="exportPdf" class="btn" style="margin-top: 1rem;">
+                <i class="fas fa-file-pdf"></i> Exportar para PDF
+            </button>
+            <button id="closeModal" class="btn" style="margin-top: 1rem; background: var(--gray);">
+                Fechar
+            </button>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Configuração inicial
+            const optionCards = document.querySelectorAll('.option-card');
+            const formulario = document.getElementById('formulario');
+            const modal = document.getElementById('resultModal');
+            const closeModalBtn = document.getElementById('closeModal');
+            
+            // Evento para selecionar opção
+            optionCards.forEach(card => {
+                card.addEventListener('click', function() {
+                    const opcao = this.getAttribute('data-opcao');
+                    selecionarOpcao(opcao);
+                });
+            });
+            
+            // Função para selecionar opção
+            function selecionarOpcao(opcao) {
+                document.querySelector('.options-container').style.display = 'none';
+                formulario.style.display = 'block';
+                
+                const inputsDinamicos = document.getElementById('inputsDinamicos');
+                inputsDinamicos.innerHTML = '';
+                
+                const formTitle = document.getElementById('form-title');
+                
+                // Adicionar botão de voltar
+                const voltarBtn = document.createElement('button');
+                voltarBtn.className = 'btn-voltar';
+                voltarBtn.innerHTML = '<i class="fas fa-arrow-left"></i> Voltar';
+                voltarBtn.onclick = function() {
+                    document.querySelector('.options-container').style.display = 'grid';
+                    formulario.style.display = 'none';
+                };
+                
+                if (opcao === 'moldura') {
+                    formTitle.textContent = 'Orçamento de Molduras';
+                    inputsDinamicos.innerHTML = `
+                        <div class="form-group">
+                            <label for="metros">Metragem Linear (metros)</label>
+                            <input type="number" id="metros" class="form-control" step="0.01" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="tipoMoldura">Perfil da Moldura</label>
+                            <select id="tipoMoldura" class="form-control" required>
+                                <option value="">Selecione a moldura</option>
+                                <option value="8">8 cm</option>
+                                <option value="10">10 cm</option>
+                                <option value="12">12 cm</option>
+                            </select>
+                        </div>
+                        <button type="button" class="btn-submit">Calcular Orçamento</button>
+                    `;
+                } 
+                else if (opcao === 'parede') {
+                    formTitle.textContent = 'Orçamento de Paredes';
+                    inputsDinamicos.innerHTML = `
+                        <div class="form-group">
+                            <label for="comprimento">Comprimento (m)</label>
+                            <input type="number" id="comprimento" class="form-control" step="0.01" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="altura">Altura (m)</label>
+                            <input type="number" id="altura" class="form-control" step="0.01" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="tipoParede">Tipo de Parede</label>
+                            <select id="tipoParede" class="form-control" required>
+                                <option value="">Selecione o tipo</option>
+                                <option value="40">40 mm</option>
+                                <option value="70">70 mm</option>
+                                <option value="90">90 mm</option>
+                            </select>
+                        </div>
+                        <button type="button" class="btn-submit">Calcular Orçamento</button>
+                    `;
+                } 
+                else if (opcao === 'forro') {
+                    formTitle.textContent = 'Orçamento de Forros';
+                    inputsDinamicos.innerHTML = `
+                        <div class="form-group">
+                            <label for="area">Área total (m²)</label>
+                            <input type="number" id="area" class="form-control" step="0.01" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="iluminacao">Incluir pontos de iluminação?</label>
+                            <select id="iluminacao" class="form-control">
+                                <option value="nao">Não</option>
+                                <option value="sim">Sim</option>
+                            </select>
+                        </div>
+                        <button type="button" class="btn-submit">Calcular Orçamento</button>
+                    `;
+                }
+                
+                // Adicionar o botão de voltar após os inputs
+                inputsDinamicos.appendChild(voltarBtn);
+                
+                // Adicionar evento ao botão de calcular
+                const submitBtn = inputsDinamicos.querySelector('.btn-submit');
+                if (submitBtn) {
+                    submitBtn.addEventListener('click', calcularOrcamento);
+                }
+            }
+            
+            function calcularOrcamento() {
+                const formTitle = document.getElementById('form-title').textContent;
+                const orcamento = {
+                    tipo: formTitle.replace('Orçamento de ', ''),
+                    data: new Date().toLocaleDateString('pt-BR')
+                };
+                
+                // Coletar dados específicos
+                if (orcamento.tipo === 'Molduras') {
+                    orcamento.metros = parseFloat(document.getElementById('metros').value);
+                    orcamento.perfil = document.getElementById('tipoMoldura').value + ' cm';
+                    orcamento.valorUnitario = 45.00;
+                    orcamento.valorTotal = orcamento.metros * orcamento.valorUnitario;
+                } 
+                else if (orcamento.tipo === 'Paredes') {
+                    orcamento.comprimento = parseFloat(document.getElementById('comprimento').value);
+                    orcamento.altura = parseFloat(document.getElementById('altura').value);
+                    orcamento.area = (orcamento.comprimento * orcamento.altura).toFixed(2);
+                    orcamento.tipoParede = document.getElementById('tipoParede').value + ' mm';
+                    orcamento.valorUnitario = 85.00;
+                    orcamento.valorTotal = orcamento.area * orcamento.valorUnitario;
+                } 
+                else if (orcamento.tipo === 'Forros') {
+                    orcamento.area = parseFloat(document.getElementById('area').value);
+                    orcamento.iluminacao = document.getElementById('iluminacao').value === 'sim' ? 'Sim' : 'Não';
+                    orcamento.valorUnitario = 75.00;
+                    orcamento.valorTotal = orcamento.area * orcamento.valorUnitario;
+                }
+                
+                // Exibir resultados
+                exibirResultado(orcamento);
+            }
+            
+            function exibirResultado(orcamento) {
+                const resultText = document.getElementById('resultText');
+                let html = `
+                    <table class="result-table">
+                        <thead>
+                            <tr>
+                                <th>Item</th>
+                                <th>Valor</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+                
+                // Adicionar itens dinâmicos
+                for (const [key, value] of Object.entries(orcamento)) {
+                    if (key === 'valorTotal') continue;
+                    
+                    html += `
+                        <tr>
+                            <td>${formatLabel(key)}</td>
+                            <td>${formatValue(key, value)}</td>
+                        </tr>
+                    `;
+                }
+                
+                // Adicionar valor total
+                html += `
+                        <tr style="font-weight: bold;">
+                            <td>Valor Total</td>
+                            <td>${formatCurrency(orcamento.valorTotal)}</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <p style="margin-top: 1rem; font-size: 0.9rem;">
+                    <i class="fas fa-info-circle"></i> Este valor é estimado e pode variar após avaliação técnica.
+                </p>
+                `;
+                
+                resultText.innerHTML = html;
+                modal.style.display = 'flex';
+                
+                // Configurar exportação para PDF
+                document.getElementById('exportPdf').onclick = () => exportToPdf(orcamento);
+            }
+            
+            // Funções auxiliares
+            function formatLabel(key) {
+                const labels = {
+                    'tipo': 'Tipo de Serviço',
+                    'data': 'Data',
+                    'metros': 'Metragem',
+                    'perfil': 'Perfil',
+                    'comprimento': 'Comprimento',
+                    'altura': 'Altura',
+                    'area': 'Área',
+                    'tipoParede': 'Tipo de Parede',
+                    'iluminacao': 'Iluminação',
+                    'valorUnitario': 'Valor Unitário'
+                };
+                return labels[key] || key;
+            }
+            
+            function formatValue(key, value) {
+                if (key === 'valorUnitario') return formatCurrency(value);
+                if (key === 'data') return value;
+                if (typeof value === 'number') return value.toFixed(2);
+                return value;
+            }
+            
+            function formatCurrency(value) {
+                return 'R$ ' + value.toFixed(2).replace('.', ',');
+            }
+            
+            function exportToPdf(orcamento) {
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+                
+                // Cabeçalho
+                doc.setFontSize(18);
+                doc.setTextColor(0, 168, 107);
+                doc.text('Orçamento de Gesso', 105, 20, { align: 'center' });
+                
+                doc.setFontSize(12);
+                doc.setTextColor(100);
+                doc.text(`Emitido em: ${orcamento.data}`, 105, 30, { align: 'center' });
+                
+                // Dados do orçamento
+                doc.setFontSize(14);
+                doc.setTextColor(0);
+                doc.text('Detalhes do Orçamento:', 20, 45);
+                
+                // Preparar dados para tabela
+                const data = [];
+                for (const [key, value] of Object.entries(orcamento)) {
+                    if (key === 'valorTotal') continue;
+                    data.push([formatLabel(key), formatValue(key, value)]);
+                }
+                
+                // Adicionar tabela
+                doc.autoTable({
+                    startY: 50,
+                    head: [['Item', 'Valor']],
+                    body: data,
+                    headStyles: {
+                        fillColor: [0, 168, 107],
+                        textColor: 255
+                    },
+                    styles: {
+                        fontSize: 10
+                    }
+                });
+                
+                // Valor total
+                doc.setFontSize(14);
+                doc.text(`Valor Total: ${formatCurrency(orcamento.valorTotal)}`, 20, doc.lastAutoTable.finalY + 15);
+                
+                // Rodapé
+                doc.setFontSize(10);
+                doc.setTextColor(100);
+                doc.text('Este orçamento tem validade de 15 dias a partir da data de emissão.', 105, doc.lastAutoTable.finalY + 30, { align: 'center' });
+                
+                // Salvar PDF
+                doc.save(`Orcamento_Gesso_${new Date().toISOString().slice(0,10)}.pdf`);
+            }
+            
+            // Fechar modal
+            closeModalBtn.addEventListener('click', function() {
+                modal.style.display = 'none';
+                document.querySelector('.options-container').style.display = 'grid';
+                formulario.style.display = 'none';
+            });
+            
+            // Voltar no modal
+            document.getElementById('voltarModal').addEventListener('click', function() {
+                modal.style.display = 'none';
+            });
+        });
+    </script>
+</body>
+</html>
