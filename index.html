@@ -186,6 +186,31 @@
             font-size: 1rem;
         }
 
+        select.form-control:invalid {
+            color: #999;
+        }
+
+        select.form-control:required:invalid {
+            border-color: #ff9999;
+        }
+
+        option[value=""][disabled] {
+            display: none;
+        }
+
+        option {
+            color: #000;
+        }
+
+        .form-group input[type="number"] {
+            -moz-appearance: textfield;
+        }
+        .form-group input::-webkit-outer-spin-button,
+        .form-group input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
         .btn-submit {
             width: 100%;
             padding: 1rem;
@@ -238,6 +263,37 @@
             color: white;
         }
 
+        .result-table tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+
+        .result-table tr:last-child {
+            font-weight: bold;
+            background-color: var(--primary);
+            color: white;
+        }
+
+        .btn-whatsapp {
+            background-color: #25D366;
+            color: white;
+        }
+        
+        .btn-whatsapp:hover {
+            background-color: #128C7E;
+        }
+        
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 1rem;
+        }
+        
+        .modal-buttons .btn {
+            flex: 1;
+            min-width: 120px;
+        }
+
         @media (max-width: 768px) {
             .main-content {
                 padding: 1rem;
@@ -246,6 +302,14 @@
             
             .options-container {
                 grid-template-columns: 1fr;
+            }
+            
+            .modal-buttons {
+                flex-direction: column;
+            }
+            
+            .modal-buttons .btn {
+                width: 100%;
             }
         }
     </style>
@@ -300,28 +364,36 @@
         <div class="modal-content">
             <h3>Orçamento Calculado</h3>
             <div id="resultText"></div>
-            <button id="voltarModal" class="btn" style="margin-top: 1rem; background: var(--gray);">
-                <i class="fas fa-arrow-left"></i> Voltar
-            </button>
-            <button id="exportPdf" class="btn" style="margin-top: 1rem;">
-                <i class="fas fa-file-pdf"></i> Exportar para PDF
-            </button>
-            <button id="closeModal" class="btn" style="margin-top: 1rem; background: var(--gray);">
-                Fechar
-            </button>
+            <div class="modal-buttons">
+                <button id="voltarModal" class="btn" style="background: var(--gray);">
+                    <i class="fas fa-arrow-left"></i> Voltar
+                </button>
+                <button id="exportPdf" class="btn">
+                    <i class="fas fa-file-pdf"></i> PDF
+                </button>
+                <button id="sendWhatsapp" class="btn btn-whatsapp">
+                    <i class="fab fa-whatsapp"></i> WhatsApp
+                </button>
+                <button id="closeModal" class="btn" style="background: var(--gray);">
+                    Fechar
+                </button>
+            </div>
         </div>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Configuração inicial
             const optionCards = document.querySelectorAll('.option-card');
             const formulario = document.getElementById('formulario');
             const modal = document.getElementById('resultModal');
             const closeModalBtn = document.getElementById('closeModal');
             
-            // Evento para selecionar opção
+            // Variável para armazenar os dados do orçamento atual
+            let orcamentoAtual = null;
+            let pdfBlob = null;
+            
             optionCards.forEach(card => {
                 card.addEventListener('click', function() {
                     const opcao = this.getAttribute('data-opcao');
@@ -329,7 +401,6 @@
                 });
             });
             
-            // Função para selecionar opção
             function selecionarOpcao(opcao) {
                 document.querySelector('.options-container').style.display = 'none';
                 formulario.style.display = 'block';
@@ -339,7 +410,6 @@
                 
                 const formTitle = document.getElementById('form-title');
                 
-                // Adicionar botão de voltar
                 const voltarBtn = document.createElement('button');
                 voltarBtn.className = 'btn-voltar';
                 voltarBtn.innerHTML = '<i class="fas fa-arrow-left"></i> Voltar';
@@ -352,13 +422,13 @@
                     formTitle.textContent = 'Orçamento de Molduras';
                     inputsDinamicos.innerHTML = `
                         <div class="form-group">
-                            <label for="metros">Metragem Linear (metros)</label>
-                            <input type="number" id="metros" class="form-control" step="0.01" required>
+                            <label for="quantidade">Quantidade de Molduras</label>
+                            <input type="number" id="quantidade" class="form-control" min="1" required>
                         </div>
                         <div class="form-group">
                             <label for="tipoMoldura">Perfil da Moldura</label>
                             <select id="tipoMoldura" class="form-control" required>
-                                <option value="">Selecione a moldura</option>
+                                <option value="" selected disabled hidden>Selecione a moldura</option>
                                 <option value="8">8 cm</option>
                                 <option value="10">10 cm</option>
                                 <option value="12">12 cm</option>
@@ -381,7 +451,7 @@
                         <div class="form-group">
                             <label for="tipoParede">Tipo de Parede</label>
                             <select id="tipoParede" class="form-control" required>
-                                <option value="">Selecione o tipo</option>
+                                <option value="" selected disabled hidden>Selecione o tipo</option>
                                 <option value="40">40 mm</option>
                                 <option value="70">70 mm</option>
                                 <option value="90">90 mm</option>
@@ -408,47 +478,87 @@
                     `;
                 }
                 
-                // Adicionar o botão de voltar após os inputs
                 inputsDinamicos.appendChild(voltarBtn);
                 
-                // Adicionar evento ao botão de calcular
                 const submitBtn = inputsDinamicos.querySelector('.btn-submit');
                 if (submitBtn) {
-                    submitBtn.addEventListener('click', calcularOrcamento);
+                    submitBtn.addEventListener('click', function() {
+                        if (validarFormulario()) {
+                            calcularOrcamento();
+                        }
+                    });
                 }
+            }
+            
+            function validarFormulario() {
+                const form = document.getElementById('budget-form');
+                if (!form) return true;
+                
+                const requiredFields = form.querySelectorAll('[required]');
+                let isValid = true;
+                
+                requiredFields.forEach(field => {
+                    if (!field.value.trim()) {
+                        const label = field.previousElementSibling?.textContent || 'Campo';
+                        alert(`Por favor, preencha o campo: ${label}`);
+                        
+                        field.style.opacity = '1';
+                        field.style.height = 'auto';
+                        field.style.position = 'static';
+                        field.focus();
+                        
+                        isValid = false;
+                    }
+                });
+                
+                return isValid;
             }
             
             function calcularOrcamento() {
                 const formTitle = document.getElementById('form-title').textContent;
-                const orcamento = {
+                orcamentoAtual = {
                     tipo: formTitle.replace('Orçamento de ', ''),
                     data: new Date().toLocaleDateString('pt-BR')
                 };
-                
-                // Coletar dados específicos
-                if (orcamento.tipo === 'Molduras') {
-                    orcamento.metros = parseFloat(document.getElementById('metros').value);
-                    orcamento.perfil = document.getElementById('tipoMoldura').value + ' cm';
-                    orcamento.valorUnitario = 45.00;
-                    orcamento.valorTotal = orcamento.metros * orcamento.valorUnitario;
-                } 
-                else if (orcamento.tipo === 'Paredes') {
-                    orcamento.comprimento = parseFloat(document.getElementById('comprimento').value);
-                    orcamento.altura = parseFloat(document.getElementById('altura').value);
-                    orcamento.area = (orcamento.comprimento * orcamento.altura).toFixed(2);
-                    orcamento.tipoParede = document.getElementById('tipoParede').value + ' mm';
-                    orcamento.valorUnitario = 85.00;
-                    orcamento.valorTotal = orcamento.area * orcamento.valorUnitario;
-                } 
-                else if (orcamento.tipo === 'Forros') {
-                    orcamento.area = parseFloat(document.getElementById('area').value);
-                    orcamento.iluminacao = document.getElementById('iluminacao').value === 'sim' ? 'Sim' : 'Não';
-                    orcamento.valorUnitario = 75.00;
-                    orcamento.valorTotal = orcamento.area * orcamento.valorUnitario;
+
+                try {
+                    if (orcamentoAtual.tipo === 'Molduras') {
+                        orcamentoAtual.quantidade = parseInt(document.getElementById('quantidade').value);
+                        orcamentoAtual.perfil = document.getElementById('tipoMoldura').value + ' cm';
+
+                        let valorUnitario;
+                        if (orcamentoAtual.quantidade < 20) {
+                            valorUnitario = 120.00;
+                        } else if (orcamentoAtual.quantidade < 50) {
+                            valorUnitario = 90.00;
+                        } else {
+                            valorUnitario = 70.00;
+                        }
+
+                        orcamentoAtual.valorUnitario = valorUnitario;
+                        orcamentoAtual.valorTotal = (orcamentoAtual.quantidade * valorUnitario).toFixed(2);
+
+                    } else if (orcamentoAtual.tipo === 'Paredes') {
+                        orcamentoAtual.comprimento = parseFloat(document.getElementById('comprimento').value);
+                        orcamentoAtual.altura = parseFloat(document.getElementById('altura').value);
+                        orcamentoAtual.tipoParede = document.getElementById('tipoParede').value + ' mm';
+                        orcamentoAtual.area = (orcamentoAtual.comprimento * orcamentoAtual.altura).toFixed(2);
+                        orcamentoAtual.valorUnitario = 85.00;
+                        orcamentoAtual.valorTotal = (orcamentoAtual.area * orcamentoAtual.valorUnitario).toFixed(2);
+
+                    } else if (orcamentoAtual.tipo === 'Forros') {
+                        orcamentoAtual.area = parseFloat(document.getElementById('area').value);
+                        orcamentoAtual.iluminacao = document.getElementById('iluminacao').value === 'sim' ? 'Sim' : 'Não';
+                        orcamentoAtual.valorUnitario = 75.00;
+                        orcamentoAtual.valorTotal = (orcamentoAtual.area * orcamentoAtual.valorUnitario).toFixed(2);
+                    }
+
+                    exibirResultado(orcamentoAtual);
+
+                } catch (error) {
+                    console.error('Erro ao calcular orçamento:', error);
+                    alert('Ocorreu um erro ao calcular o orçamento. Por favor, verifique os dados e tente novamente.');
                 }
-                
-                // Exibir resultados
-                exibirResultado(orcamento);
             }
             
             function exibirResultado(orcamento) {
@@ -464,7 +574,6 @@
                         <tbody>
                 `;
                 
-                // Adicionar itens dinâmicos
                 for (const [key, value] of Object.entries(orcamento)) {
                     if (key === 'valorTotal') continue;
                     
@@ -476,11 +585,10 @@
                     `;
                 }
                 
-                // Adicionar valor total
                 html += `
-                        <tr style="font-weight: bold;">
+                        <tr>
                             <td>Valor Total</td>
-                            <td>${formatCurrency(orcamento.valorTotal)}</td>
+                            <td>${formatCurrency(parseFloat(orcamento.valorTotal))}</td>
                         </tr>
                     </tbody>
                 </table>
@@ -492,16 +600,15 @@
                 resultText.innerHTML = html;
                 modal.style.display = 'flex';
                 
-                // Configurar exportação para PDF
-                document.getElementById('exportPdf').onclick = () => exportToPdf(orcamento);
+                // Gerar o PDF automaticamente e armazenar
+                exportToPdf(orcamento);
             }
             
-            // Funções auxiliares
             function formatLabel(key) {
                 const labels = {
                     'tipo': 'Tipo de Serviço',
                     'data': 'Data',
-                    'metros': 'Metragem',
+                    'quantidade': 'Quantidade',
                     'perfil': 'Perfil',
                     'comprimento': 'Comprimento',
                     'altura': 'Altura',
@@ -516,19 +623,18 @@
             function formatValue(key, value) {
                 if (key === 'valorUnitario') return formatCurrency(value);
                 if (key === 'data') return value;
-                if (typeof value === 'number') return value.toFixed(2);
+                if (typeof value === 'number' && value % 1 !== 0) return parseFloat(value).toFixed(2);
                 return value;
             }
             
             function formatCurrency(value) {
-                return 'R$ ' + value.toFixed(2).replace('.', ',');
+                return 'R$ ' + parseFloat(value).toFixed(2).replace('.', ',');
             }
             
             function exportToPdf(orcamento) {
                 const { jsPDF } = window.jspdf;
                 const doc = new jsPDF();
                 
-                // Cabeçalho
                 doc.setFontSize(18);
                 doc.setTextColor(0, 168, 107);
                 doc.text('Orçamento de Gesso', 105, 20, { align: 'center' });
@@ -537,19 +643,16 @@
                 doc.setTextColor(100);
                 doc.text(`Emitido em: ${orcamento.data}`, 105, 30, { align: 'center' });
                 
-                // Dados do orçamento
                 doc.setFontSize(14);
                 doc.setTextColor(0);
                 doc.text('Detalhes do Orçamento:', 20, 45);
                 
-                // Preparar dados para tabela
                 const data = [];
                 for (const [key, value] of Object.entries(orcamento)) {
                     if (key === 'valorTotal') continue;
                     data.push([formatLabel(key), formatValue(key, value)]);
                 }
                 
-                // Adicionar tabela
                 doc.autoTable({
                     startY: 50,
                     head: [['Item', 'Valor']],
@@ -563,27 +666,73 @@
                     }
                 });
                 
-                // Valor total
                 doc.setFontSize(14);
                 doc.text(`Valor Total: ${formatCurrency(orcamento.valorTotal)}`, 20, doc.lastAutoTable.finalY + 15);
                 
-                // Rodapé
                 doc.setFontSize(10);
                 doc.setTextColor(100);
                 doc.text('Este orçamento tem validade de 15 dias a partir da data de emissão.', 105, doc.lastAutoTable.finalY + 30, { align: 'center' });
                 
-                // Salvar PDF
-                doc.save(`Orcamento_Gesso_${new Date().toISOString().slice(0,10)}.pdf`);
+                // Armazenar o blob do PDF para compartilhamento
+                pdfBlob = doc.output('blob');
+                
+                return doc;
             }
             
-            // Fechar modal
+            function enviarWhatsApp() {
+                if (!orcamentoAtual) return;
+                
+                // Formatar a mensagem
+                let mensagem = `*Orçamento de ${orcamentoAtual.tipo}*\n\n`;
+                
+                for (const [key, value] of Object.entries(orcamentoAtual)) {
+                    if (key === 'valorTotal') continue;
+                    mensagem += `*${formatLabel(key)}*: ${formatValue(key, value)}\n`;
+                }
+                
+                mensagem += `\n*Valor Total*: ${formatCurrency(parseFloat(orcamentoAtual.valorTotal))}\n\n`;
+                mensagem += `Data: ${orcamentoAtual.data}\n\n`;
+                mensagem += "Este orçamento tem validade de 15 dias.";
+                
+                // Codificar a mensagem para URL
+                const mensagemCodificada = encodeURIComponent(mensagem);
+                const whatsappUrl = `https://wa.me/?text=${mensagemCodificada}`;
+                
+                // Tentar usar a API Web Share se disponível
+                if (navigator.share && pdfBlob) {
+                    const file = new File([pdfBlob], `Orcamento_Gesso_${new Date().toISOString().slice(0,10)}.pdf`, {
+                        type: 'application/pdf'
+                    });
+                    
+                    navigator.share({
+                        title: `Orçamento de ${orcamentoAtual.tipo}`,
+                        text: mensagem,
+                        files: [file]
+                    }).catch(err => {
+                        console.error('Erro ao compartilhar:', err);
+                        window.open(whatsappUrl, '_blank');
+                    });
+                } else {
+                    window.open(whatsappUrl, '_blank');
+                }
+            }
+            
+            // Event listeners
+            document.getElementById('exportPdf').addEventListener('click', function() {
+                if (orcamentoAtual) {
+                    const doc = exportToPdf(orcamentoAtual);
+                    doc.save(`Orcamento_Gesso_${new Date().toISOString().slice(0,10)}.pdf`);
+                }
+            });
+            
+            document.getElementById('sendWhatsapp').addEventListener('click', enviarWhatsApp);
+            
             closeModalBtn.addEventListener('click', function() {
                 modal.style.display = 'none';
                 document.querySelector('.options-container').style.display = 'grid';
                 formulario.style.display = 'none';
             });
             
-            // Voltar no modal
             document.getElementById('voltarModal').addEventListener('click', function() {
                 modal.style.display = 'none';
             });
